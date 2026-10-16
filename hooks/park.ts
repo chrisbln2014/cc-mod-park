@@ -48,8 +48,9 @@ export const upsert = (list: readonly Entry[], entry: Entry): Entry[] => [...lis
 
 export const without = (list: readonly Entry[], id: string): Entry[] => list.filter((one) => one.id !== id)
 
-// Windows paths arrive with backslashes (session cwd) or forward slashes (git); compare and split them as forward slashes
-const slash = (path: string) => path.replace(/\\/g, '/')
+// Windows paths arrive with backslashes (session cwd) or forward slashes (git), and the drive letter in either case;
+// compare and split them as forward slashes with an upper-case drive letter
+const slash = (path: string) => path.replace(/\\/g, '/').replace(/^[a-z]:/, (drive) => drive.toUpperCase())
 
 const parentOf = (path: string) => {
   const flat = slash(path).replace(/\/+$/, '')

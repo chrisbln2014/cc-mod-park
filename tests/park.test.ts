@@ -58,12 +58,32 @@ describe('shownFor', () => {
     const list = [entry({ id: 'wt', dir: 'C:\\w\\repo\\.claude\\worktrees\\x', repoRoot: 'C:/w/repo' })]
     expect(shownFor(list, 'C:\\w\\repo', existsIn(['C:/w/repo'])).map((e) => e.id)).toEqual(['wt'])
   })
+
+  test('Windows: a folder that still exists shows in that same folder', () => {
+    const list = [entry({ id: 'here', dir: 'C:\\w\\repo', repoRoot: 'C:/w/repo' })]
+    expect(shownFor(list, 'C:\\w\\repo', existsIn(['C:\\w\\repo'])).map((e) => e.id)).toEqual(['here'])
+  })
+
+  test('Windows: drive letter case does not matter', () => {
+    const list = [entry({ id: 'lower', dir: 'c:\\w\\repo', repoRoot: null }), entry({ id: 'gone', dir: 'C:\\w\\gone\\x', repoRoot: 'c:/w/repo' })]
+    expect(shownFor(list, 'C:\\w\\repo', existsIn(['c:\\w\\repo', 'c:/w/repo'])).map((e) => e.id).sort()).toEqual(['gone', 'lower'])
+    const upper = [entry({ id: 'upper', dir: 'C:\\w\\repo', repoRoot: null }), entry({ id: 'gone', dir: 'c:\\w\\gone\\x', repoRoot: 'C:/w/repo' })]
+    expect(shownFor(upper, 'c:\\w\\repo', existsIn(['C:\\w\\repo', 'C:/w/repo'])).map((e) => e.id).sort()).toEqual(['gone', 'upper'])
+  })
+
+  test('Windows: a removed folder walks up through the same strings ancestors() lists', () => {
+    const list = [entry({ id: 'gone', dir: 'c:\\w\\scratch\\a\\b', repoRoot: null })]
+    const present = new Set(ancestors('c:\\w\\scratch\\a\\b').filter((path) => path === 'C:/w' || path === 'C:/w/scratch'))
+    expect(present.size).toBe(2)
+    expect(shownFor(list, 'C:\\w\\scratch', (path) => present.has(path)).map((e) => e.id)).toEqual(['gone'])
+  })
 })
 
 describe('ancestors', () => {
   test('lists every parent, with Windows separators turned into forward slashes', () => {
     expect(ancestors('/w/repo/sub')).toEqual(['/w/repo', '/w'])
     expect(ancestors('C:\\w\\repo')).toEqual(['C:/w', 'C:'])
+    expect(ancestors('c:\\w\\repo')).toEqual(['C:/w', 'C:'])
   })
 })
 
