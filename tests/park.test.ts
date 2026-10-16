@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { pickLocale, stringsFor } from '../hooks/i18n.ts'
-import { aiTitleOf, ageText, defaultsBefore, defaultsOf, firstPromptOf, herdrTitleOf, isNewWork, modelLine, parseList, pickTitle, projectFolder, recapOf, restoreReport, sameDefaults, serialize, shownFor, upsert, withDefaults, without, writeBackPlan, type Entry } from '../hooks/park.ts'
+import { aiTitleOf, ageText, ancestors, defaultsBefore, defaultsOf, firstPromptOf, herdrTitleOf, isNewWork, modelLine, parseList, pickTitle, projectFolder, recapOf, restoreReport, sameDefaults, serialize, shownFor, upsert, withDefaults, without, writeBackPlan, type Entry } from '../hooks/park.ts'
 
 const entry = (over: Partial<Entry>): Entry => ({ id: 's1', dir: '/w/repo', repoRoot: '/w/repo', branch: 'main', title: 't', goal: null, now: null, next: null, model: null, effort: null, parkedAt: 0, ...over })
 const existsIn = (paths: string[]) => (path: string) => paths.includes(path)
@@ -46,6 +46,24 @@ describe('shownFor', () => {
     const list = [entry({ id: 'gone', dir: '/w/scratch/a/b', repoRoot: null })]
     expect(shownFor(list, '/w/scratch', existsIn(['/w', '/w/scratch'])).map((e) => e.id)).toEqual(['gone'])
     expect(shownFor(list, '/w', existsIn(['/w', '/w/scratch']))).toEqual([])
+  })
+
+  test('Windows: a removed folder with no repo shows under its nearest surviving parent', () => {
+    const list = [entry({ id: 'gone', dir: 'C:\\w\\scratch\\a\\b', repoRoot: null })]
+    expect(shownFor(list, 'C:\\w\\scratch', existsIn(['C:/w', 'C:/w/scratch'])).map((e) => e.id)).toEqual(['gone'])
+    expect(shownFor(list, 'C:\\w', existsIn(['C:/w', 'C:/w/scratch']))).toEqual([])
+  })
+
+  test('Windows: a removed worktree shows under its repo root even though git reports it with forward slashes', () => {
+    const list = [entry({ id: 'wt', dir: 'C:\\w\\repo\\.claude\\worktrees\\x', repoRoot: 'C:/w/repo' })]
+    expect(shownFor(list, 'C:\\w\\repo', existsIn(['C:/w/repo'])).map((e) => e.id)).toEqual(['wt'])
+  })
+})
+
+describe('ancestors', () => {
+  test('lists every parent, with Windows separators turned into forward slashes', () => {
+    expect(ancestors('/w/repo/sub')).toEqual(['/w/repo', '/w'])
+    expect(ancestors('C:\\w\\repo')).toEqual(['C:/w', 'C:'])
   })
 })
 

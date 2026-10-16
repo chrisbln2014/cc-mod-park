@@ -6,6 +6,7 @@ import {
   STATE_FILE,
   aiTitleOf,
   ageText,
+  ancestors,
   defaultsBefore,
   defaultsOf,
   firstPromptOf,
@@ -51,16 +52,6 @@ const git = async ($: EngineInterface, cwd: string, args: readonly string[]) => 
   } catch {
     return null
   }
-}
-
-const ancestors = (path: string) => {
-  const out: string[] = []
-  let dir = path
-  while (dir.lastIndexOf('/') > 0) {
-    dir = dir.slice(0, dir.lastIndexOf('/'))
-    out.push(dir)
-  }
-  return out
 }
 
 const loadList = async ($: EngineInterface, path: string) => parseList(await readOrNull($, path))

@@ -48,9 +48,24 @@ export const upsert = (list: readonly Entry[], entry: Entry): Entry[] => [...lis
 
 export const without = (list: readonly Entry[], id: string): Entry[] => list.filter((one) => one.id !== id)
 
+// Windows paths arrive with backslashes (session cwd) or forward slashes (git); compare and split them as forward slashes
+const slash = (path: string) => path.replace(/\\/g, '/')
+
 const parentOf = (path: string) => {
-  const cut = path.replace(/\/+$/, '').lastIndexOf('/')
-  return cut <= 0 ? '/' : path.slice(0, cut)
+  const flat = slash(path).replace(/\/+$/, '')
+  const cut = flat.lastIndexOf('/')
+  return cut <= 0 ? '/' : flat.slice(0, cut)
+}
+
+// Every path parentOf can reach from this one, so existence can be checked up front
+export const ancestors = (path: string) => {
+  const out: string[] = []
+  let dir = slash(path)
+  while (dir.lastIndexOf('/') > 0) {
+    dir = dir.slice(0, dir.lastIndexOf('/'))
+    out.push(dir)
+  }
+  return out
 }
 
 // A gone directory falls back to its repo root, else to its nearest surviving ancestor,
@@ -67,7 +82,7 @@ export const shownFor = (list: readonly Entry[], cwd: string, exists: (path: str
   list
     .flatMap((entry) => {
       const home = homeDir(entry, exists)
-      return home.dir === cwd ? [{ ...entry, dirGone: home.dirGone }] : []
+      return slash(home.dir) === slash(cwd) ?[{ ...entry, dirGone: home.dirGone }] : []
     })
     .sort((a, b) => b.parkedAt - a.parkedAt)
 
